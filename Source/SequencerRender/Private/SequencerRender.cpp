@@ -161,6 +161,13 @@ void FSequencerRenderModule::PluginButtonClicked()
 
                     movieSceneCapture->CustomStartFrame = RoundedStartFrame;
                     movieSceneCapture->CustomEndFrame = RoundedEndFrame;
+
+                    startFrame = movieSceneCapture->CustomStartFrame.Value;
+                }
+
+                if (movieSceneCapture->bUseCustomStartFrame)
+                {
+                    startFrame = movieSceneCapture->CustomStartFrame.Value;
                 }
 
                 captureOutputDirectory = movieSceneCapture->Settings.OutputDirectory.Path;
@@ -169,10 +176,11 @@ void FSequencerRenderModule::PluginButtonClicked()
                 if (LevelSequence)
                     captureFps = LevelSequence->GetMovieScene()->GetDisplayRate().AsDecimal();
 
-                const FText confirmOperationMessage = FText::FromString(FString::Printf(TEXT("Sequence will be rendered with folowing settings:\n\n FPS: %f\n Resolution: %dx%d"),
+                const FText confirmOperationMessage = FText::FromString(FString::Printf(TEXT("Sequence will be rendered with folowing settings:\n\n FPS: %f\n Resolution: %dx%d\nStart frame: %d"),
                     captureFps,
                     movieSceneCapture->Settings.Resolution.ResX,
-                    movieSceneCapture->Settings.Resolution.ResY
+                    movieSceneCapture->Settings.Resolution.ResY,
+                    startFrame
                 ));
                 EAppReturnType::Type confirmed = FMessageDialog::Open(EAppMsgType::OkCancel, confirmOperationMessage);
                 if (confirmed == EAppReturnType::Ok)
@@ -188,7 +196,7 @@ void FSequencerRenderModule::PluginButtonClicked()
                             FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
 
                             int32 ReturnCode = -1;
-                            FString args = FString::Printf(TEXT("-i image.%%04d.png -vcodec libx264 -crf 10 -b 10M -y -filter:v fps=fps=%f %s"), captureFps, *fileName);
+                            FString args = FString::Printf(TEXT("-start_number %d -i image.%%04d.png -vcodec libx264 -crf 10 -b 10M -y -filter:v fps=fps=%f %s"), startFrame, captureFps, *fileName);
                             FString output;
                             FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *args, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
                             int32 retCode = 0;

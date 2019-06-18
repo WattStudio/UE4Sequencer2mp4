@@ -28,4 +28,5 @@ private:
 	TSharedPtr<class FUICommandList> PluginCommands;
     FString captureOutputDirectory;
     float captureFps = 30.f;
+    int32 startFrame;
 };
