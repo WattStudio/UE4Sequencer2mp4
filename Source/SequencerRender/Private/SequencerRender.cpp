@@ -196,7 +196,7 @@ void FSequencerRenderModule::PluginButtonClicked()
                             FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
 
                             int32 ReturnCode = -1;
-                            FString args = FString::Printf(TEXT("-start_number %d -i image.%%04d.png -vcodec libx264 -crf 10 -b 10M -y -filter:v fps=fps=%f %s"), startFrame, captureFps, *fileName);
+                            FString args = FString::Printf(TEXT("-start_number %d -i image.%%04d.png -vcodec libx264 -pix_fmt yuv420p -crf 10 -b 10M -y -filter:v fps=fps=%f %s"), startFrame, captureFps, *fileName);
                             FString output;
                             FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *args, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
                             int32 retCode = 0;
