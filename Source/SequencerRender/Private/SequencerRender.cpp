@@ -182,6 +182,7 @@ void FSequencerRenderModule::PluginButtonClicked()
                     movieSceneCapture->Settings.Resolution.ResY,
                     startFrame
                 ));
+
                 EAppReturnType::Type confirmed = FMessageDialog::Open(EAppMsgType::OkCancel, confirmOperationMessage);
                 if (confirmed == EAppReturnType::Ok)
                 {
@@ -213,11 +214,7 @@ void FSequencerRenderModule::PluginButtonClicked()
                                 {
                                     UE_LOG(LogTemp, Error, TEXT("Error converting image sequece:\n%s"), *output);
                                 }
-                                else
-                                {
-                                    const FText msg = FText::FromString(TEXT("Sequence successfully converted!"));
-                                    FMessageDialog::Debugf(msg);
-                                }
+
                                 const FText cleanupMsg = FText::FromString(TEXT("Remove image sequence?"));
                                 EAppReturnType::Type answer = FMessageDialog::Open(EAppMsgType::YesNo, cleanupMsg);
                                 if (answer == EAppReturnType::Yes)
