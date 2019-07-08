@@ -4,6 +4,7 @@
 #include "SequencerRenderStyle.h"
 #include "SequencerRenderCommands.h"
 #include "Misc/MessageDialog.h"
+#include "Misc/FileHelper.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "LevelSequence/Public/LevelSequence.h"
 #include "Toolkits/AssetEditorManager.h"
@@ -190,16 +191,26 @@ void FSequencerRenderModule::PluginButtonClicked()
                     {
                         FString thirdPartyFolder = IPluginManager::Get().FindPlugin("SequencerRender")->GetBaseDir() / TEXT("ThirdParty");
                         FString ffmpegExe = FPaths::Combine(thirdPartyFolder, TEXT("ffmpeg.exe"));
-                        if (FPaths::FileExists(ffmpegExe))
+                        
+                        // fetch ffmpeg args from file
+                        FString ffmpegCmdPath = FPaths::Combine(thirdPartyFolder, TEXT("cmd.txt"));
+
+                        if (FPaths::FileExists(ffmpegExe) && FPaths::FileExists(ffmpegCmdPath))
                         {
+                            FString ffmpegCommand;
+                            FFileHelper::LoadFileToString(ffmpegCommand, *ffmpegCmdPath);
+                            ffmpegCommand = ffmpegCommand.Replace(TEXT("@START_FRAME"), *FString::FromInt(startFrame));
+                            ffmpegCommand = ffmpegCommand.Replace(TEXT("@CAPTURE_FPS"), *FString::FromInt(captureFps));
+                            ffmpegCommand = ffmpegCommand.Replace(TEXT("@OUT_FILE_NAME"), *fileName);
+
                             void* PipeRead = nullptr;
                             void* PipeWrite = nullptr;
                             FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
 
                             int32 ReturnCode = -1;
-                            FString args = FString::Printf(TEXT("-start_number %d -i image.%%04d.png -vcodec libx264 -pix_fmt yuv420p -crf 10 -b 10M -y -filter:v fps=fps=%f %s"), startFrame, captureFps, *fileName);
                             FString output;
-                            FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *args, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
+                            FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *ffmpegCommand, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
+                            UE_LOG(LogTemp, Warning, TEXT("ffmpeg.exe %s"), *ffmpegCommand);
                             if (pHandle.IsValid())
                             {
                                 while (FPlatformProcess::IsProcRunning(pHandle))
