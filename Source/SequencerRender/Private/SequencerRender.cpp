@@ -191,11 +191,15 @@ void FSequencerRenderModule::PluginButtonClicked()
                     {
                         FString thirdPartyFolder = IPluginManager::Get().FindPlugin("SequencerRender")->GetBaseDir() / TEXT("ThirdParty");
                         FString ffmpegExe = FPaths::Combine(thirdPartyFolder, TEXT("ffmpeg.exe"));
-                        
+                        if (!FPaths::FileExists(ffmpegExe))
+                        {
+                            ffmpegExe = TEXT("ffmpeg");
+                        }
+
                         // fetch ffmpeg args from file
                         FString ffmpegCmdPath = FPaths::Combine(thirdPartyFolder, TEXT("cmd.txt"));
 
-                        if (FPaths::FileExists(ffmpegExe) && FPaths::FileExists(ffmpegCmdPath))
+                        if (FPaths::FileExists(ffmpegCmdPath))
                         {
                             FString ffmpegCommand;
                             FFileHelper::LoadFileToString(ffmpegCommand, *ffmpegCmdPath);
