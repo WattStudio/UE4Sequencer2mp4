@@ -1,1 +1,0 @@
--start_number @START_FRAME -framerate @CAPTURE_FPS -i image.%04d.png -vcodec mpeg4 -pix_fmt yuv420p -q:v 1 -y @OUT_FILE_NAME

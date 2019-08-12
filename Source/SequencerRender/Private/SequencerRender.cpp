@@ -192,66 +192,66 @@ void FSequencerRenderModule::PluginButtonClicked()
                         FString pluginDir = IPluginManager::Get().FindPlugin("SequencerRender")->GetBaseDir();
                         FString ffmpegExe = TEXT("ffmpeg.exe");
 
-                        // fetch ffmpeg args from file
-                        FString ffmpegArgs = FPaths::Combine(pluginDir, TEXT("suequence2mp4args.txt"));
-
                         // Try use args from env variable
-                        FString agrsFileOverride = FWindowsPlatformMisc::GetEnvironmentVariable(TEXT("SEQUENCE2MP4ARGS"));
-                        if (!agrsFileOverride.IsEmpty())
-                            ffmpegArgs = agrsFileOverride;
-
-                        if (FPaths::FileExists(ffmpegArgs))
+                        FString ffmpegArgs = FWindowsPlatformMisc::GetEnvironmentVariable(TEXT("SEQUENCE2MP4ARGS"));
+                        FString ffmpegCommand;
+                        if (!FPaths::FileExists(ffmpegArgs))
                         {
-                            FString ffmpegCommand;
+                            // use default args
+                            ffmpegCommand = FString::Printf(TEXT("-start_number %d -framerate %f -i image.%%04d.png -vcodec mpeg4 -pix_fmt yuv420p -q:v 1 -y %s"), startFrame, captureFps, *fileName);
+                            UE_LOG(LogTemp, Warning, TEXT("ffmpeg arguments file not found. Using defaults!\n%s"), *ffmpegCommand);
+                        }
+                        else
+                        {
                             FFileHelper::LoadFileToString(ffmpegCommand, *ffmpegArgs);
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@START_FRAME"), *FString::FromInt(startFrame));
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@CAPTURE_FPS"), *FString::FromInt(captureFps));
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@OUT_FILE_NAME"), *fileName);
-
-                            void* PipeRead = nullptr;
-                            void* PipeWrite = nullptr;
-                            FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
-
-                            int32 ReturnCode = -1;
-                            FString output;
-                            FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *ffmpegCommand, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
-                            UE_LOG(LogTemp, Warning, TEXT("ffmpeg.exe %s"), *ffmpegCommand);
-                            if (pHandle.IsValid())
-                            {
-                                while (FPlatformProcess::IsProcRunning(pHandle))
-                                {
-                                    output += FPlatformProcess::ReadPipe(PipeRead);
-                                    FPlatformProcess::Sleep(0.1f);
-                                }
-                                output += FPlatformProcess::ReadPipe(PipeRead);
-                                FPlatformProcess::GetProcReturnCode(pHandle, &ReturnCode);
-
-                                if (ReturnCode != 0)
-                                {
-                                    UE_LOG(LogTemp, Error, TEXT("Error converting image sequece:\n%s"), *output);
-                                }
-
-                                const FText cleanupMsg = FText::FromString(TEXT("Remove image sequence?"));
-                                EAppReturnType::Type answer = FMessageDialog::Open(EAppMsgType::YesNo, cleanupMsg);
-                                if (answer == EAppReturnType::Yes)
-                                {
-                                    // cleanup
-                                    TArray<FString> foundPngs;
-                                    IFileManager::Get().FindFiles(foundPngs, *captureOutputDirectory, TEXT("png"));
-                                    for (FString pngImageFileName : foundPngs)
-                                    {
-                                        FString pngAbsPath = FPaths::Combine(captureOutputDirectory, pngImageFileName);
-                                        IFileManager::Get().Delete(*pngAbsPath);
-                                    }
-                                }
-
-                            }
-                            else
-                            {
-                                UE_LOG(LogTemp, Error, TEXT("Failed to launch ffmpeg.exe!"));
-                            }
-                            FPlatformProcess::ClosePipe(PipeRead, PipeWrite);
                         }
+
+                        void* PipeRead = nullptr;
+                        void* PipeWrite = nullptr;
+                        FPlatformProcess::CreatePipe(PipeRead, PipeWrite);
+
+                        int32 ReturnCode = -1;
+                        FString output;
+                        FProcHandle pHandle = FPlatformProcess::CreateProc(*ffmpegExe, *ffmpegCommand, false, true, true, nullptr, 0, *captureOutputDirectory, PipeWrite);
+                        UE_LOG(LogTemp, Warning, TEXT("Executing command: ffmpeg.exe %s"), *ffmpegCommand);
+                        if (pHandle.IsValid())
+                        {
+                            while (FPlatformProcess::IsProcRunning(pHandle))
+                            {
+                                output += FPlatformProcess::ReadPipe(PipeRead);
+                                FPlatformProcess::Sleep(0.1f);
+                            }
+                            output += FPlatformProcess::ReadPipe(PipeRead);
+                            FPlatformProcess::GetProcReturnCode(pHandle, &ReturnCode);
+
+                            if (ReturnCode != 0)
+                            {
+                                UE_LOG(LogTemp, Error, TEXT("Error converting image sequece:\n%s"), *output);
+                            }
+
+                            const FText cleanupMsg = FText::FromString(TEXT("Remove image sequence?"));
+                            EAppReturnType::Type answer = FMessageDialog::Open(EAppMsgType::YesNo, cleanupMsg);
+                            if (answer == EAppReturnType::Yes)
+                            {
+                                // cleanup
+                                TArray<FString> foundPngs;
+                                IFileManager::Get().FindFiles(foundPngs, *captureOutputDirectory, TEXT("png"));
+                                for (FString pngImageFileName : foundPngs)
+                                {
+                                    FString pngAbsPath = FPaths::Combine(captureOutputDirectory, pngImageFileName);
+                                    IFileManager::Get().Delete(*pngAbsPath);
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            UE_LOG(LogTemp, Error, TEXT("Failed to launch ffmpeg.exe!"));
+                        }
+                        FPlatformProcess::ClosePipe(PipeRead, PipeWrite);
                     };
 
                     MovieSceneCaptureModule.StartCapture(movieSceneCapture);
