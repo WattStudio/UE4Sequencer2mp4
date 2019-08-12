@@ -115,7 +115,7 @@ void FSequencerRenderModule::PluginButtonClicked()
         TArray<FString> outFileNames;
         fileSelected = DesktopPlatform->SaveFileDialog(
             FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr),
-            TEXT("Where to save output mp4 ?"),
+            TEXT("Where to save output video file?"),
             movieSceneCapture->Settings.OutputDirectory.Path,
             TEXT("image.mp4"),
             FileTypes, EFileDialogFlags::None, outFileNames);
@@ -139,7 +139,6 @@ void FSequencerRenderModule::PluginButtonClicked()
 
                 if (!movieSceneCapture->bUseCustomStartFrame && !movieSceneCapture->bUseCustomEndFrame)
                 {
-                    // If they don't want to use a custom start/end frame we override the default values to be the length of the sequence, as the default is [0,1)
                     if (!LevelSequence)
                     {
                         const FString ErrorMessage = FString::Printf(TEXT("Specified Level Sequence Asset failed to load. Specified Asset Path: %s"), *movieSceneCapture->LevelSequenceAsset.GetAssetPathString());
