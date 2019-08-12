@@ -189,20 +189,21 @@ void FSequencerRenderModule::PluginButtonClicked()
                 {
                     auto onCaptureFinished = [=](bool result)
                     {
-                        FString thirdPartyFolder = IPluginManager::Get().FindPlugin("SequencerRender")->GetBaseDir() / TEXT("ThirdParty");
-                        FString ffmpegExe = FPaths::Combine(thirdPartyFolder, TEXT("ffmpeg.exe"));
-                        if (!FPaths::FileExists(ffmpegExe))
-                        {
-                            ffmpegExe = TEXT("ffmpeg");
-                        }
+                        FString pluginDir = IPluginManager::Get().FindPlugin("SequencerRender")->GetBaseDir();
+                        FString ffmpegExe = TEXT("ffmpeg.exe");
 
                         // fetch ffmpeg args from file
-                        FString ffmpegCmdPath = FPaths::Combine(thirdPartyFolder, TEXT("cmd.txt"));
+                        FString ffmpegArgs = FPaths::Combine(pluginDir, TEXT("suequence2mp4args.txt"));
 
-                        if (FPaths::FileExists(ffmpegCmdPath))
+                        // Try use args from env variable
+                        FString agrsFileOverride = FWindowsPlatformMisc::GetEnvironmentVariable(TEXT("SEQUENCE2MP4ARGS"));
+                        if (!agrsFileOverride.IsEmpty())
+                            ffmpegArgs = agrsFileOverride;
+
+                        if (FPaths::FileExists(ffmpegArgs))
                         {
                             FString ffmpegCommand;
-                            FFileHelper::LoadFileToString(ffmpegCommand, *ffmpegCmdPath);
+                            FFileHelper::LoadFileToString(ffmpegCommand, *ffmpegArgs);
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@START_FRAME"), *FString::FromInt(startFrame));
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@CAPTURE_FPS"), *FString::FromInt(captureFps));
                             ffmpegCommand = ffmpegCommand.Replace(TEXT("@OUT_FILE_NAME"), *fileName);
